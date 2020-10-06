@@ -1,10 +1,10 @@
 # Introduction
-This program will take a list of projects and endpoints as .csv, check if these exist and create the projects and endpoints.
+This program will take a list of projects and endpoints as .csv, check if these exist and if not create the projects and endpoints.
 
 This script will only work with Microsoft Speech Service API V3.
 
 # Outputfile
-The information for each endpoint will be written to a results file within the same directory which contains the inputFile and is named ***{timestr}_{inputFile}_results.csv***.
+The information for each endpoint incl. exiting ones will be written to a results file within the same directory which contains the inputFile and is named ***{timestr}_{inputFile}_results.csv***.
 
 # File structure inputFile
 List of projects and endpoints needs to be provided as .csv with the following structure:
