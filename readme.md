@@ -26,3 +26,6 @@ python create_projects+endpoints.py -i projects+endpoints.csv -d data -k {Speech
 -k | --key: Subscription Key of your Speech Service.
 
 -r | --region: The region your Speech Service is located. E.g. "westeurope"
+
+# License
+See [LICENSE](./LICENSE)
