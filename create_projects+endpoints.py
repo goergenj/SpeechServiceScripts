@@ -1,3 +1,5 @@
+# Created by Jan Goergen, 06.10.2020, https://github.com/goergenj
+
 import urllib.request, urllib.parse, urllib.error, base64, json, requests
 import http.client as httplib
 import pandas as pd

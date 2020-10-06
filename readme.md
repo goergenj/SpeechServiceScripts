@@ -3,8 +3,10 @@ This program will take a list of projects and endpoints as .csv, check if these 
 
 This script will only work with Microsoft Speech Service API V3.
 
-# File structure inputFile
-List of projects and endpoints needs to be provided as .csv with the following structure:
+# InputFile
+A list of projects and endpoints needs to be provided as .csv.
+
+The Inputfile has the following structure:
 ```
 Projectname;Locale;Environment
 ```
@@ -36,3 +38,5 @@ python create_projects+endpoints.py -i projects+endpoints.csv -d data -k {Speech
 
 # License
 See [LICENSE](./LICENSE)
+
+*Created by Jan Goergen, https://github.com/goergenj*
