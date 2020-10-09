@@ -62,9 +62,9 @@ def main(argv):
     for index, row in res.iterrows():
         print("Projectname: " + row['Projectname'] + " in locale " + row['Locale'])
         #Check if project exists and create missing projects
-        projectself,projectID = get_projects(speech_key,service_region,row['Projectname'],row['Locale'])
+        projectself,projectID = get_projects(speech_key,service_region,str(row['Projectname']),str(row['Locale']))
         #Check if endpoint exists and create missing endpoints
-        create_endpoints(speech_key,service_region,row['Projectname'],projectID,projectself,row['Locale'],row['Environment'],results_file)
+        create_endpoints(speech_key,service_region,str(row['Projectname']),projectID,projectself,str(row['Locale']),str(row['Environment']),str(row['Logging']),str(row['Custom Description (optional)']),str(row['Custom Model ID (optional)']),results_file)
 
     #Close results_file
     results_file.close() 
@@ -85,7 +85,7 @@ def usage():
     print()
     sys.exit()
 
-def get_models(speech_key,service_region,locale):
+def get_basemodels(speech_key,service_region,locale):
     skip = 0
     top = 100
     dataresults = []
@@ -140,7 +140,7 @@ def get_models(speech_key,service_region,locale):
                 modelcountlocale += 1
                 if latestmodel < resultvalues[i]["createdDateTime"][:10]:
                     latestmodel = resultvalues[i]["createdDateTime"]
-                    latestmodelID = resultvalues[i]["self"][77:]
+                    latestmodelID = resultvalues[i]["self"][len(f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/models/base/'):]
                     latestmodelDisplayname = resultvalues[i]["displayName"]
                     latestmodelURI = resultvalues[i]["self"]#
             modelcount += 1
@@ -159,6 +159,82 @@ def get_models(speech_key,service_region,locale):
     print("===================================================================================")
     # Return latest model URI
     get_models_return = latestmodelURI
+    return get_models_return
+
+def get_custommodels(speech_key,service_region,locale,customModelID):
+    skip = 0
+    top = 100
+    dataresults = []
+    loopcounter = 0
+    modelID =""
+    modelDisplayname = ""
+    modelURI = ""
+    error = False
+    print(f'Retrieving custom models for {locale}')
+    print("===================================================================================")
+    while error == False:
+        #print("Loop:", loopcounter)
+        try:
+            headers = {
+                # Request headers
+                'Ocp-Apim-Subscription-Key': speech_key,
+            }
+            params = urllib.parse.urlencode({
+                # Request parameters
+                'skip': skip,
+                'top': top,
+            })
+            conn = httplib.HTTPSConnection(service_region + '.api.cognitive.microsoft.com')
+            conn.request("GET", "/speechtotext/v3.0/models?%s" % params, "{body}", headers)
+            response = conn.getresponse()
+            data = response.read()
+            data = json.loads(data)
+            print("Number of values:", len(data['values']))
+            conn.close()
+            if len(data['values']) == 0:
+                error = True
+            else:
+                dataresults.append(data)
+        except Exception as e:
+            print("An error occured.")
+            print(data)
+            print("[Errno {0}] {1}".format(e.errno, e.strerror))
+        skip += top
+        loopcounter += 1
+    # Extract newest model from results
+    r = 0
+    modelcount = 0
+    modelcountlocale = 0
+    loopcounter_r = 0
+    loopcounter_i = 0
+    #print(len(dataresults))
+    while r < len(dataresults):
+        i = 0
+        #print("r Loop:", loopcounter_r)
+        resultvalues = dataresults[r]['values']
+        while i < len(resultvalues):
+            #print("i Loop:", loopcounter_i)
+            if resultvalues[i]["locale"] == locale:
+                modelcountlocale += 1
+                if f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/models/{customModelID}' == resultvalues[i]["self"]:
+                    modelID = resultvalues[i]["self"][len(f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/models/'):]
+                    modelDisplayname = resultvalues[i]["displayName"]
+                    modelURI = resultvalues[i]["self"]
+            modelcount += 1
+            i += 1
+            loopcounter_i += 1
+        r +=1
+        loopcounter_r += 1
+    # Print information on latest model
+    print("===================================================================================")
+    print("Total number of Models:", modelcount)
+    print("Total number of Models for", locale, ":", modelcountlocale)
+    print("Model ID:", modelID)
+    print("DisplayName:", modelDisplayname)
+    print("ModelURI:", modelURI)
+    print("===================================================================================")
+    # Return latest model URI
+    get_models_return = modelURI
     return get_models_return
 
 def get_projects(speech_key,service_region,projectname,locale):
@@ -215,12 +291,12 @@ def get_projects(speech_key,service_region,projectname,locale):
                 projectcountlocale += 1
                 if resultvalues[i]["displayName"] == projectname:
                     projectexists = True
-                    get_projects_return = resultvalues[i]["self"], resultvalues[i]["self"][74:]
+                    get_projects_return = resultvalues[i]["self"], resultvalues[i]["self"][len(f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/projects/'):]
                     print("===================================================================================")
                     print("Project:", i)
                     print("Displayname:", resultvalues[i]["displayName"])
                     print("Locale:", resultvalues[i]["locale"])
-                    print("ProjectID:", resultvalues[i]["self"][74:])
+                    print("ProjectID:", resultvalues[i]["self"][len(f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/projects/'):])
                     print("ProjectURI:", resultvalues[i]["self"])
                     print("===================================================================================")
             projectcount += 1
@@ -259,24 +335,24 @@ def create_project(speech_key,service_region,locale,displayName):
         print("===================================================================================")
         print("Displayname:", data["displayName"])
         print("Locale:", data["locale"])
-        print("ProjectID:", data["self"][74:])
+        print("ProjectID:", data["self"][len(f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/projects/'):])
         print("ProjectURI:", data["self"])
         print("===================================================================================")
-        return data['self'],data['self'][74:]
+        return data['self'],data['self'][len(f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/projects/'):]
     except Exception as e:
         print("An error occured.")
         print(data)
         print("[Errno {0}] {1}".format(e.errno, e.strerror))
         return "error","error"
 
-def create_endpoint(speech_key,service_region,projectname,projectID,projectself,locale,endpoint,endpoint_description,modelURI,results_file):
+def create_endpoint(speech_key,service_region,projectname,projectID,projectself,locale,endpoint,endpoint_description,modelURI,logging,results_file):
     endpointcreated = False
     headers = {
         # Request headers
         'Content-Type': 'application/json',
         'Ocp-Apim-Subscription-Key': speech_key,
     }
-    body = "{\"model\": {\"self\": \"" + modelURI + "\"},\"project\": {\"self\": \"" + projectself + "\"},\"properties\": {\"loggingEnabled\": true},\"locale\": \"" + locale + "\",\"displayName\": \"" + endpoint + "\",\"description\": \"" + endpoint_description + "\"}"
+    body = "{\"model\": {\"self\": \"" + modelURI + "\"},\"project\": {\"self\": \"" + projectself + "\"},\"properties\": {\"loggingEnabled\": \"" + logging + "\"},\"locale\": \"" + locale + "\",\"displayName\": \"" + endpoint + "\",\"description\": \"" + endpoint_description + "\"}"
     params = urllib.parse.urlencode({
     })
 
@@ -292,9 +368,9 @@ def create_endpoint(speech_key,service_region,projectname,projectID,projectself,
         print("===================================================================================")
         print("EndpointName:", data["displayName"])
         print("Locale:", data["locale"])
-        print("EndpointID:", data["self"][75:])
+        print("EndpointID:", data["self"][len(f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/endpoints/'):])
         print("EndpointURI:", data["self"])
-        print("EndpointURI:", data["description"])
+        print("Endpoint Description:", data["description"])
         print("===================================================================================")
         #Write Endpoint Information to Endpoint List
         results_file.write(projectname + ";" + projectID + ";" + data["displayName"] + ";" + data["self"][75:] + ";" + data["description"] + ";new\n")
@@ -361,12 +437,12 @@ def get_endpoints(speech_key,service_region,projectname,projectID,endpointname,r
                 print("Endpoint:", i)
                 print("EndpointName:", resultvalues[i]["displayName"])
                 print("Locale:", resultvalues[i]["locale"])
-                print("EndpointID:", resultvalues[i]["self"][75:])
+                print("EndpointID:", resultvalues[i]["self"][len(f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/endpoints/'):])
                 print("EndpointURI:", resultvalues[i]["self"])
-                print("EndpointURI:", resultvalues[i]["description"])
+                print("Endpoint Description:", resultvalues[i]["description"])
                 print("===================================================================================")
                 #Write Endpoint Information to Endpoint List
-                results_file.write(projectname + ";" + projectID + ";" + resultvalues[i]["displayName"] + ";" + resultvalues[i]["self"][75:] + ";" + resultvalues[i]["description"] + ";exists\n")
+                results_file.write(projectname + ";" + projectID + ";" + resultvalues[i]["displayName"] + ";" + resultvalues[i]["self"][len(f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/endpoints/'):] + ";" + resultvalues[i]["description"] + ";exists\n")
             endpointcount += 1
             i += 1
             loopcounter_i += 1
@@ -378,19 +454,34 @@ def get_endpoints(speech_key,service_region,projectname,projectID,endpointname,r
         print("===================================================================================")
     return endpointexists
   
-def create_endpoints(speech_key,service_region,projectname,projectID,projectself,locale,environment,results_file):
+def create_endpoints(speech_key,service_region,projectname,projectID,projectself,locale,environment,logging,endpointDescription,customModelID,results_file):
+    #Set Endoint Name
     endpointName = projectname + "-" + locale + "-" + environment
     endpointName = endpointName.lower()
     endpointName = endpointName.replace(" ", "")
-    environment = environment.upper()
-    endpointDescription = "Endpoint for General Conversation in " + environment
+    #Set Endpoint Description
+    if len(endpointDescription) > 3:
+        endpointDescriptionLocal = endpointDescription
+    else:
+        environment = environment.upper()
+        endpointDescriptionLocal = "Endpoint for General Conversation in " + environment
     #Check if Endpoint exists
     get_endpoint_results = get_endpoints(speech_key,service_region,projectname,projectID,endpointName,results_file)
     if get_endpoint_results == False:
-        #Retrieve Models for specified locale
-        modelURI = get_models(speech_key,service_region,locale)
+        #Set Endpoint
+        if len(customModelID) < 4:
+            #Retrieve Models for specified locale
+            modelURI = get_basemodels(speech_key,service_region,locale)
+        else:
+            #Retrieve Custom Model
+            modelURI = get_custommodels(speech_key,service_region,locale,customModelID)
+            if modelURI == "":
+                print("===================================================================================")
+                print(f"Custom Model does not exist for {locale}. Falling back to latest basemodel!")
+                modelURI = get_basemodels(speech_key,service_region,locale)
+                print("===================================================================================")
         #Create Endpoint
-        create_endpoint(speech_key,service_region,projectname,projectID,projectself,locale,endpointName,endpointDescription,modelURI,results_file)
+        create_endpoint(speech_key,service_region,projectname,projectID,projectself,locale,endpointName,endpointDescriptionLocal,modelURI,logging,results_file)
 
 def get_token(speech_key,service_region):
     print(f'Retrieve access token')

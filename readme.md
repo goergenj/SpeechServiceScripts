@@ -3,12 +3,23 @@ This program will take a list of projects and endpoints as .csv, check if these 
 
 This script will only work with Microsoft Speech Service API V3.
 
+You can set logging behaviour, add an endpoint description and also deploy with an existing custom model.
+
+Endpoint description and custom model are optional setting.
+If description is not set a default description will be used with the following structure:
+
+***Endpoint for General Conversation in <environment>***.
+
+If custom model cannot be found for the specified locale, the script will fall-back to the latest baseline model for this locale.
+This will also be used, when no custom model is specified.
+
 # InputFile
 A list of projects and endpoints needs to be provided as .csv.
 
 The Inputfile has the following structure:
 ```
-Projectname;Locale;Environment
+Projectname;Locale;Environment;Logging;Custom Description (optional);Custom Model ID (optional)
+DemoProject;en-US;dev;true;My Custom Description;xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
 # Outputfile
