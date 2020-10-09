@@ -50,7 +50,7 @@ def main(argv):
         #Open resultsfile
         results_filename = f'{dataPath}\\{timestr}_{inputFile}_results.csv'
         results_file = open(results_filename, "w") # Zweiter parameter ist der mode: r ead, w rite, a ppend. r+ read/write
-        results_file.write('Projectname;projectID;EndpointName;EndpointID;EndpointDescription;EndpointStatus\n')
+        results_file.write('Projectname;projectID;projectDescription;EndpointName;EndpointID;EndpointDescription;EndpointStatus\n')
     else:
         print(f"Data folder not specified or does not exist. To get help run create_projects+endpoints.py -h")
         sys.exit(1)
@@ -62,9 +62,9 @@ def main(argv):
     for index, row in res.iterrows():
         print("Projectname: " + row['Projectname'] + " in locale " + row['Locale'])
         #Check if project exists and create missing projects
-        projectself,projectID = get_projects(speech_key,service_region,str(row['Projectname']),str(row['Locale']))
+        projectself,projectID,projectDescription = get_projects(speech_key,service_region,str(row['Projectname']),str(row['Project Description (optional)']),str(row['Locale']))
         #Check if endpoint exists and create missing endpoints
-        create_endpoints(speech_key,service_region,str(row['Projectname']),projectID,projectself,str(row['Locale']),str(row['Environment']),str(row['Logging']),str(row['Custom Description (optional)']),str(row['Custom Model ID (optional)']),results_file)
+        create_endpoints(speech_key,service_region,str(row['Projectname']),projectID,projectself,projectDescription,str(row['Locale']),str(row['Environment']),str(row['Logging']),str(row['Endpoint Description (optional)']),str(row['Custom Model ID (optional)']),results_file)
 
     #Close results_file
     results_file.close() 
@@ -237,7 +237,7 @@ def get_custommodels(speech_key,service_region,locale,customModelID):
     get_models_return = modelURI
     return get_models_return
 
-def get_projects(speech_key,service_region,projectname,locale):
+def get_projects(speech_key,service_region,projectname,projectdescription,locale):
     skip = 0
     top = 100
     dataresults = []
@@ -291,13 +291,14 @@ def get_projects(speech_key,service_region,projectname,locale):
                 projectcountlocale += 1
                 if resultvalues[i]["displayName"] == projectname:
                     projectexists = True
-                    get_projects_return = resultvalues[i]["self"], resultvalues[i]["self"][len(f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/projects/'):]
+                    get_projects_return = resultvalues[i]["self"], resultvalues[i]["self"][len(f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/projects/'):], resultvalues[i]["description"]
                     print("===================================================================================")
                     print("Project:", i)
                     print("Displayname:", resultvalues[i]["displayName"])
                     print("Locale:", resultvalues[i]["locale"])
                     print("ProjectID:", resultvalues[i]["self"][len(f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/projects/'):])
                     print("ProjectURI:", resultvalues[i]["self"])
+                    print("Project Description:", resultvalues[i]["description"])
                     print("===================================================================================")
             projectcount += 1
             i += 1
@@ -309,18 +310,22 @@ def get_projects(speech_key,service_region,projectname,locale):
         print("===================================================================================")
         print("Projectname: " + projectname + " in locale " + locale + " does not exist.")
         print("===================================================================================")
-        projectself,projectID = create_project(speech_key,service_region,locale,projectname)
-        get_projects_return = projectself,projectID
+        if len(projectdescription) > 3:
+            projectdescriptionLocal = projectdescription
+        else:
+            projectdescriptionLocal = ""
+        projectself,projectID,projectdescription = create_project(speech_key,service_region,locale,projectname,projectdescriptionLocal)
+        get_projects_return = projectself,projectID,projectdescription
     # Return projectURI
     return get_projects_return
 
-def create_project(speech_key,service_region,locale,displayName):
+def create_project(speech_key,service_region,locale,displayName,projectdescription):
     headers = {
         # Request headers
         'Content-Type': 'application/json',
         'Ocp-Apim-Subscription-Key': speech_key,
     }
-    body = "{\"locale\": \"" + locale + "\",\"displayName\": \"" + displayName +"\"}"
+    body = "{\"locale\": \"" + locale + "\",\"displayName\": \"" + displayName +"\",\"description\": \"" + projectdescription + "\"}"
     params = urllib.parse.urlencode({
     })
 
@@ -337,15 +342,16 @@ def create_project(speech_key,service_region,locale,displayName):
         print("Locale:", data["locale"])
         print("ProjectID:", data["self"][len(f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/projects/'):])
         print("ProjectURI:", data["self"])
+        print("Project Description:", data["description"])
         print("===================================================================================")
-        return data['self'],data['self'][len(f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/projects/'):]
+        return data['self'],data['self'][len(f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/projects/'):],data["description"]
     except Exception as e:
         print("An error occured.")
         print(data)
         print("[Errno {0}] {1}".format(e.errno, e.strerror))
         return "error","error"
 
-def create_endpoint(speech_key,service_region,projectname,projectID,projectself,locale,endpoint,endpoint_description,modelURI,logging,results_file):
+def create_endpoint(speech_key,service_region,projectname,projectID,projectself,projectDescription,locale,endpoint,endpoint_description,modelURI,logging,results_file):
     endpointcreated = False
     headers = {
         # Request headers
@@ -373,7 +379,7 @@ def create_endpoint(speech_key,service_region,projectname,projectID,projectself,
         print("Endpoint Description:", data["description"])
         print("===================================================================================")
         #Write Endpoint Information to Endpoint List
-        results_file.write(projectname + ";" + projectID + ";" + data["displayName"] + ";" + data["self"][75:] + ";" + data["description"] + ";new\n")
+        results_file.write(projectname + ";" + projectID + ";" + projectDescription + ";" + data["displayName"] + ";" + data["self"][75:] + ";" + data["description"] + ";new\n")
         return endpointcreated
     except Exception as e:
         print("An error occured.")
@@ -381,7 +387,7 @@ def create_endpoint(speech_key,service_region,projectname,projectID,projectself,
         print("[Errno {0}] {1}".format(e.errno, e.strerror)) ## Check: AttributeError: 'NameError' object has no attribute 'errno'
         return endpointcreated
 
-def get_endpoints(speech_key,service_region,projectname,projectID,endpointname,results_file):
+def get_endpoints(speech_key,service_region,projectname,projectID,projectDescription,endpointname,results_file):
     skip = 0
     top = 100
     dataresults = []
@@ -442,7 +448,7 @@ def get_endpoints(speech_key,service_region,projectname,projectID,endpointname,r
                 print("Endpoint Description:", resultvalues[i]["description"])
                 print("===================================================================================")
                 #Write Endpoint Information to Endpoint List
-                results_file.write(projectname + ";" + projectID + ";" + resultvalues[i]["displayName"] + ";" + resultvalues[i]["self"][len(f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/endpoints/'):] + ";" + resultvalues[i]["description"] + ";exists\n")
+                results_file.write(projectname + ";" + projectID + ";" + projectDescription + ";" + resultvalues[i]["displayName"] + ";" + resultvalues[i]["self"][len(f'https://{service_region}.api.cognitive.microsoft.com/speechtotext/v3.0/endpoints/'):] + ";" + resultvalues[i]["description"] + ";exists\n")
             endpointcount += 1
             i += 1
             loopcounter_i += 1
@@ -454,7 +460,7 @@ def get_endpoints(speech_key,service_region,projectname,projectID,endpointname,r
         print("===================================================================================")
     return endpointexists
   
-def create_endpoints(speech_key,service_region,projectname,projectID,projectself,locale,environment,logging,endpointDescription,customModelID,results_file):
+def create_endpoints(speech_key,service_region,projectname,projectID,projectself,projectDescription,locale,environment,logging,endpointDescription,customModelID,results_file):
     #Set Endoint Name
     endpointName = projectname + "-" + locale + "-" + environment
     endpointName = endpointName.lower()
@@ -466,7 +472,7 @@ def create_endpoints(speech_key,service_region,projectname,projectID,projectself
         environment = environment.upper()
         endpointDescriptionLocal = "Endpoint for General Conversation in " + environment
     #Check if Endpoint exists
-    get_endpoint_results = get_endpoints(speech_key,service_region,projectname,projectID,endpointName,results_file)
+    get_endpoint_results = get_endpoints(speech_key,service_region,projectname,projectID,projectDescription,endpointName,results_file)
     if get_endpoint_results == False:
         #Set Endpoint
         if len(customModelID) < 4:
@@ -481,7 +487,7 @@ def create_endpoints(speech_key,service_region,projectname,projectID,projectself
                 modelURI = get_basemodels(speech_key,service_region,locale)
                 print("===================================================================================")
         #Create Endpoint
-        create_endpoint(speech_key,service_region,projectname,projectID,projectself,locale,endpointName,endpointDescriptionLocal,modelURI,logging,results_file)
+        create_endpoint(speech_key,service_region,projectname,projectID,projectself,projectDescription,locale,endpointName,endpointDescriptionLocal,modelURI,logging,results_file)
 
 def get_token(speech_key,service_region):
     print(f'Retrieve access token')

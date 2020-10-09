@@ -3,10 +3,10 @@ This program will take a list of projects and endpoints as .csv, check if these 
 
 This script will only work with Microsoft Speech Service API V3.
 
-You can set logging behaviour, add an endpoint description and also deploy with an existing custom model.
+You can set logging behaviour, add an optional project and endpoint description and also deploy with an existing custom model.
 
-Endpoint description and custom model are optional setting.
-If description is not set a default description will be used with the following structure:
+Project description, endpoint description and custom model id are optional settings.
+If endpoint description is not set a default description will be used with the following structure:
 
 ***Endpoint for General Conversation in <environment>***.
 
@@ -18,8 +18,8 @@ A list of projects and endpoints needs to be provided as .csv.
 
 The Inputfile has the following structure:
 ```
-Projectname;Locale;Environment;Logging;Custom Description (optional);Custom Model ID (optional)
-DemoProject;en-US;dev;true;My Custom Description;xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+Projectname;Project Description (optional);Locale;Environment;Logging;Endpoint Description (optional);Custom Model ID (optional)
+DemoProject;My Demo Project;en-US;dev;true;My Custom Description;xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
 # Outputfile
@@ -28,7 +28,7 @@ The information for each endpoint incl. exiting ones will be written to a result
 
 The Outputfile has the following structure:
 ```
-Projectname;projectID;EndpointName;EndpointID;EndpointDescription;EndpointStatus
+Projectname;projectID;projectDescription;EndpointName;EndpointID;EndpointDescription;EndpointStatus
 ```
 
 **EndpointStatus** is either *exists* or *new* depending on whether the endpoint was created or already exiting.

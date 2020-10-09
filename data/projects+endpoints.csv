@@ -1,7 +1,7 @@
-Projectname;Locale;Environment;Logging;Custom Description (optional);Custom Model ID (optional)
-DemoProject;de-DE;dev;true;;2967f2b8-e93e-4c8e-8e71-b48f16c17dea
-DemoProject;en-US;dev;false;My Description of the Endpoint;
-DemoProject;de-DE;int;true;My Description of the Endpoint;
-DemoProject;en-US;int;true;;2967f2b8-e93e-4c8e-8e71-b48f16c17dea
-DemoProject;de-DE;prod;false;;2967f2b8-e93e-4c8e-8e71-b48f16c17dea
-DemoProject;en-US;prod;false;My Description of the Endpoint;
+Projectname;Project Description (optional);Locale;Environment;Logging;Endpoint Description (optional);Custom Model ID (optional)
+DemoProject;My Test Project;en-US;int;true;;2967f2b8-e93e-4c8e-8e71-b48f16c17dea
+DemoProject;My Test Project;de-DE;prod;false;;2967f2b8-e93e-4c8e-8e71-b48f16c17dea
+DemoProject;;de-DE;dev;true;;2967f2b8-e93e-4c8e-8e71-b48f16c17dea
+DemoProject;;en-US;dev;false;My Description of the Endpoint;
+DemoProject;;de-DE;int;true;My Description of the Endpoint;
+DemoProject;;en-US;prod;false;My Description of the Endpoint;
