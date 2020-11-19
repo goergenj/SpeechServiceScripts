@@ -462,7 +462,7 @@ def get_endpoints(speech_key,service_region,projectname,projectID,projectDescrip
   
 def create_endpoints(speech_key,service_region,projectname,projectID,projectself,projectDescription,locale,environment,logging,endpointDescription,customModelID,results_file):
     #Set Endoint Name
-    endpointName = projectname + "-" + locale + "-" + environment
+    endpointName = projectname.replace(' ','-') + "-" + locale + "-" + environment
     endpointName = endpointName.lower()
     endpointName = endpointName.replace(" ", "")
     #Set Endpoint Description
